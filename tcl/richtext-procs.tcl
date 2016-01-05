@@ -145,10 +145,13 @@ namespace eval ::richtext-tinymce {
 
     } {
         #
-        # In case no editor instances are created, nothing has to be
-        # done.
+        # In case no editor instances are created, or we are on a
+        # mobile browser, which is not supported be the current
+        # version of tinymce, nothing has to be done (i.e. the plain
+        # text area will be shown).  Probably, newer versions of
+        # tinymce provide some mobile support.
         #
-        if {![info exists ::acs_blank_master(tinymce)]} {
+        if {![info exists ::acs_blank_master(tinymce)] || [ad_conn mobile_p]} {
             return
         }
 
