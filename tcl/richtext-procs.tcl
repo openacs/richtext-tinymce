@@ -80,14 +80,17 @@ namespace eval ::richtext::tinymce {
                 # config.
                 #
                 set tinymce_configs_list $configLegacy
-                ns_log notice "richtext-tinymce uses legacy parameters from acs-templating"
+                ns_log warning "richtext-tinymce uses legacy parameters from acs-templating;\
+                    	TinyMCEDefaultConfig should be set in the package parameters of richtext-tinycme, not in acs-templating."
             } else {
                 #
                 # Config for this package and legacy config in
                 # acs-templating is set, ignore config from
                 # acs-templating.
                 #
-                ns_log warning "richtext-tinymce ignores legacy parameters from acs-templating"
+                ns_log warning "richtext-tinymce ignores legacy parameters from acs-templating;
+                    	TinyMCEDefaultConfig should be set in the package parameters of richtext-xinha, not in acs-templating;\
+			when done, empty parameter setting for TinyMCEDefaultConfig in acs-templating."
             }
         }
         if {$tinymce_configs_list eq ""} {
