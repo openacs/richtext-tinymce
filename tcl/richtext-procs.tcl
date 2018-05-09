@@ -99,7 +99,7 @@ namespace eval ::richtext::tinymce {
 
         ns_log debug "tinymce: options $options"
 
-        set pairslist {}
+        set pairslist [list]
         foreach config_pair $tinymce_configs_list {
             set config_key [lindex $config_pair 0]
             if {[dict exists $options $config_key]} {
@@ -168,7 +168,7 @@ namespace eval ::richtext::tinymce {
             -order tinymce0
 
         # get the textareas where we apply tinymce
-        set tinymce_elements {}
+        set tinymce_elements [list]
         foreach htmlarea_id [lsort -unique $::acs_blank_master__htmlareas] {
             lappend tinymce_elements $htmlarea_id
         }
