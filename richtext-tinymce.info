@@ -9,17 +9,18 @@
     <implements-subsite-p>f</implements-subsite-p>
     <inherit-templates-p>f</inherit-templates-p>
 
-    <version name="1.0.0" url="http://openacs.org/repository/download/apm/richtext-tinymce-1.0.0.apm">
+    <version name="1.0.1" url="http://openacs.org/repository/download/apm/richtext-tinymce-1.0.1.apm">
         <owner url="mailto:neumann@wu-wien.ac.at">Gustaf Neumann</owner>
         <summary>Richtext editor plugin for integrating TinyMCE in OpenACS</summary>
         <release-date>2024-04-26</release-date>
         <maturity>0</maturity>
 
-        <provides url="richtext-tinymce" version="1.0.0"/>
+        <provides url="richtext-tinymce" version="1.0.1"/>
         <requires url="acs-tcl" version="5.10.1b1"/>
         <requires url="acs-templating" version="5.10.1b1"/>
 
         <callbacks>
+            <callback type="after-upgrade"  proc="richtext::tinymce::apm::after_upgrade"/>
         </callbacks>
         <parameters>
             <parameter scope="global" datatype="string"  min_n_values="1"  max_n_values="1"  name="APIKey"  default="no-api-key" description="API key, required when the editor should be used from CDN. To generate one, refer to https://www.tiny.cloud/docs/tinymce/latest/cloud-quick-start/#add-your-api-key." section_name="Hosting"/>
