@@ -188,6 +188,52 @@ namespace eval ::richtext::tinymce {
         file rename $resourceDir/$version/langs $langs_path
     }
 
+    ad_proc -private serialize_options {options} {
+        Converts an options dict into a JSON value suitable to
+        configure TinyMCE.
+    } {
+        #
+        # Serialize to JSON
+        #
+
+        set pairslist [list]
+
+        #
+        # Note: we may need to use a more competent JSON serialization
+        # to account for e.g. arrays and such, but so far this is
+        # enough.
+        #
+        foreach {key value} $options {
+            if  {[string is boolean -strict $value] || [string is double -strict $value]} {
+                lappend pairslist "${key}:${value}"
+            } else {
+                lappend pairslist "${key}:\"${value}\""
+            }
+        }
+
+        return [join $pairslist ,]
+    }
+
+    ad_proc -private default_config {} {
+        Returns the default configuration in dict format.
+    } {
+        #
+        # This is the bare minimum config we need: specify a license
+        # and turn of the ad link.
+        #
+        set tinymce_hardcoded_config {
+            license_key gpl
+            promotion false
+        }
+        set tinymce_default_config [::parameter::get_global_value \
+                                        -package_key richtext-tinymce \
+                                        -parameter DefaultConfig]
+
+        return [dict merge \
+                    $tinymce_hardcoded_config \
+                    $tinymce_default_config]
+    }
+
     ad_proc initialize_widget {
         -form_id
         -text_id
@@ -207,42 +253,14 @@ namespace eval ::richtext::tinymce {
         #
 
         #
-        # This is the bare minimum config we need: specify a license
-        # and turn of the ad link.
+        # Apply widget options to the system configuration. Local
+        # configuration will have the precedence and override system
+        # values.
         #
-        set tinymce_default_config {
-            license_key gpl
-            promotion false
-        }
-        set tinymce_configs_list [::parameter::get_global_value \
-                                      -package_key richtext-tinymce \
-                                      -parameter DefaultConfig]
-
-        #
-        # Apply widget options to the configuration. They will
-        # override the parameter values.
-        #
-        set options [dict merge $tinymce_configs_list $options]
+        set options [dict merge \
+                         [::richtext::tinymce::default_config] \
+                         $options]
         ns_log debug "tinymce: options $options"
-
-        #
-        # Serialize to JSON
-        #
-
-        set pairlist [list]
-
-        #
-        # Note: we may need to use a more competent JSON serialization
-        # to account for e.g. arrays and such, but so far this is
-        # enough.
-        #
-        foreach {key value} $options {
-            if  {[string is boolean -strict $value] || [string is double -strict $value]} {
-                lappend pairslist "${key}:${value}"
-            } else {
-                lappend pairslist "${key}:\"${value}\""
-            }
-        }
 
         #
         # Build the selectors for the textareas where we apply tinyMCE
@@ -251,13 +269,10 @@ namespace eval ::richtext::tinymce {
         foreach htmlarea_id [lsort -unique $::acs_blank_master__htmlareas] {
             lappend tinymce_selectors "#$htmlarea_id"
         }
-        lappend pairslist "selector: '[join $tinymce_selectors ,]'"
+        lappend options selector [join $tinymce_selectors ,]
 
-        set tinymce_configs_js [join $pairslist ,]
-
-        set ::acs_blank_master(tinymce.config) $tinymce_configs_js
-
-        ::richtext::tinymce::add_editor
+        ::richtext::tinymce::add_editor \
+            -reset_config -config $options
 
         return
     }
@@ -270,13 +285,15 @@ namespace eval ::richtext::tinymce {
         Add the necessary JavaScript and other files to the current
         page. The naming is modeled after "add_script", "add_css",
         ... but is intended to care about everything necessary,
-        including the content security policies. Similar naming
-        conventions should be used for other editors as well.
+        including the content security policies.
 
         This function can be as well used from other packages, such
         e.g. from the xowiki form-fields, which provide a much higher
         customization.
 
+        @param config local editor configuration in dict format. This
+                       will override any setting coming from system
+                       parameters.
         @param order an additional offset to the loading order for
                      this resource, useful to control dependencies.
                      @param config a custom configuration dict for
@@ -286,8 +303,8 @@ namespace eval ::richtext::tinymce {
                      flag. The syntax is the same of the DefaultConfig
                      parameter in this package.
         @param reset_config when set, resets the editor configuration
-                            coming from parameters, so that is may be
-                            completely overridden.
+                            coming from system parameters and only use
+                            that we provide locally.
     } {
         ::template::head::add_javascript \
             -src [::richtext::tinymce::url] \
@@ -302,16 +319,17 @@ namespace eval ::richtext::tinymce {
             security::csp::require img-src $cdn_host
         }
 
-        if {!$reset_config_p} {
-            set config [dict merge \
-                            $::acs_blank_master(tinymce.config) \
-                            $config]
-        }
+        set default_config [expr {$reset_config_p ? "" : [::richtext::tinymce::default_config]}]
 
-        set language [ad_conn language]
+        set config [dict merge \
+                        [list language [ad_conn language]] \
+                        $default_config \
+                        $config]
+
+        set editor_config [::richtext::tinymce::serialize_options $config]
 
         template::add_script -script [subst -nocommands {
-            tinyMCE.init({language: "${language}", ${config}});
+            tinyMCE.init({${editor_config}});
         }] -section body
     }
 

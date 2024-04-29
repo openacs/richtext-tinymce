@@ -9,13 +9,13 @@
     <implements-subsite-p>f</implements-subsite-p>
     <inherit-templates-p>f</inherit-templates-p>
 
-    <version name="1.0.1" url="http://openacs.org/repository/download/apm/richtext-tinymce-1.0.1.apm">
+    <version name="2.0.0" url="http://openacs.org/repository/download/apm/richtext-tinymce-2.0.0.apm">
         <owner url="mailto:neumann@wu-wien.ac.at">Gustaf Neumann</owner>
         <summary>Richtext editor plugin for integrating TinyMCE in OpenACS</summary>
-        <release-date>2024-04-26</release-date>
+        <release-date>2024-04-29</release-date>
         <maturity>0</maturity>
 
-        <provides url="richtext-tinymce" version="1.0.1"/>
+        <provides url="richtext-tinymce" version="2.0.0"/>
         <requires url="acs-tcl" version="5.10.1b1"/>
         <requires url="acs-templating" version="5.10.1b1"/>
 
