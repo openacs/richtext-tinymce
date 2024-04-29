@@ -5,7 +5,7 @@ ad_library {
     This script defines the following two procs:
 
        ::richtext-tinymce::initialize_widget
-       ::richtext-tinymce::render_widgets  
+       ::richtext-tinymce::render_widgets
 
     @author Gustaf Neumann
     @creation-date 1 Jan 2016
@@ -13,6 +13,180 @@ ad_library {
 }
 
 namespace eval ::richtext::tinymce {
+
+    ad_proc -private version {} {
+        return [::parameter::get_global_value \
+                    -package_key richtext-tinymce \
+                    -parameter Version]
+    }
+
+    ad_proc -private api_key {} {
+        return [::parameter::get_global_value \
+                    -package_key richtext-tinymce \
+                    -parameter APIKey]
+    }
+
+    ad_proc -private cdn_host {} {
+        return https://cdn.tiny.cloud
+    }
+
+    ad_proc -private base_cdn_url {} {
+        set cdn_host [::richtext::tinymce::cdn_host]
+        set api_key [::richtext::tinymce::api_key]
+        return ${cdn_host}/1/${api_key}/tinymce
+    }
+
+    ad_proc -private base_download_url {} {
+        return https://download.tiny.cloud/tinymce/community
+    }
+
+    ad_proc -private download_url {} {
+        set version [::richtext::tinymce::version]
+        set base_download_url [::richtext::tinymce::base_download_url]
+        return ${base_download_url}/tinymce_${version}.zip
+    }
+
+    ad_proc -private lang_download_url {} {
+        set version [::richtext::tinymce::version]
+        set major [lindex [split $version .] 0]
+        set base_download_url [::richtext::tinymce::base_download_url]
+        return ${base_download_url}/languagepacks/${major}/langs.zip
+    }
+
+    ad_proc -private url {} {
+        if {[file exists [::richtext::tinymce::path]]} {
+            set version [::richtext::tinymce::version]
+            set base_url /resources/richtext-tinymce/${version}/tinymce/js/tinymce
+            return ${base_url}/tinymce.min.js"
+        } else {
+            set version [::richtext::tinymce::version]
+            set base_url [::richtext::tinymce::base_cdn_url]
+            return ${base_url}/${version}/tinymce.min.js
+        }
+    }
+
+    ad_proc -private base_path {} {
+        set root_dir [acs_package_root_dir richtext-tinymce]
+        set version [::richtext::tinymce::version]
+        return ${root_dir}/www/resources/${version}/tinymce/js/tinymce
+    }
+
+    ad_proc -private langs_path {} {
+        return [::richtext::tinymce::base_path]/langs
+    }
+
+    ad_proc -private path {} {
+        return [::richtext::tinymce::base_path]/tinymce.min.js
+    }
+
+    ad_proc -private resource_info {} {
+        @return a dict in "resource_info" format, compatible with
+                other api and templates on the system.
+
+        @see util::resources::can_install_locally
+        @see util::resources::is_installed_locally
+        @see util::resources::download
+        @see util::resources::version_dir
+    } {
+        set version [::richtext::tinymce::version]
+
+        #
+        # Setup variables for access via CDN vs. local resources.
+        #
+        set resourceDir [acs_package_root_dir richtext-tinymce/www/resources]
+        set resourceUrl /resources/richtext-tinymce
+        set cdn         [::richtext::tinymce::cdn_host]
+
+        if {[file exists [::richtext::tinymce::path]]} {
+            set prefix  [::richtext::tinymce::base_path]
+            set cdnHost ""
+        } else {
+            set base_url [::richtext::tinymce::base_cdn_url]
+            set prefix ${base_url}/${version}
+            set cdnHost [dict get [ns_parseurl $cdn] host]
+        }
+
+        #
+        # Return the dict with at least the required fields
+        #
+        lappend result \
+            resourceName "TinyMCE" \
+            resourceDir $resourceDir \
+            cdn $cdn \
+            cdnHost $cdnHost \
+            prefix $prefix \
+            cssFiles {} \
+            jsFiles  {} \
+            extraFiles {} \
+            downloadURLs [list \
+                              [::richtext::tinymce::download_url] \
+                              [::richtext::tinymce::lang_download_url] \
+                             ] \
+            urnMap {} \
+            versionCheckURL https://www.tiny.cloud/tinymce/
+
+        return $result
+    }
+
+    ad_proc -private download {} {
+
+        Download the editor package for the configured version and put
+        it into a directory structure similar to the CDN structure to
+        allow installation of multiple versions. When the local
+        structure is available, it will be used by initialize_widget.
+
+        Notice, that for this automated download, the "unzip" program
+        must be installed and $::acs::rootdir/packages/www must be
+        writable by the web server.
+
+    } {
+        set version [::richtext::tinymce::version]
+
+        set resource_info [::richtext::tinymce::resource_info]
+
+        ::util::resources::download \
+            -resource_info $resource_info \
+            -version_dir $version
+
+        set resourceDir [dict get $resource_info resourceDir]
+
+        #
+        # Do we have unzip installed?
+        #
+        set unzip [::util::which unzip]
+        if {$unzip eq ""} {
+            error "can't install TinyMCE locally; no unzip program found on PATH"
+        }
+
+        #
+        # Do we have a writable output directory under resourceDir?
+        #
+        if {![file isdirectory $resourceDir/$version]} {
+            file mkdir $resourceDir/$version
+        }
+        if {![file writable $resourceDir/$version]} {
+            error "directory $resourceDir/$version is not writable"
+        }
+
+        #
+        # So far, everything is fine, unpack the editor package.
+        #
+        foreach url [dict get $resource_info downloadURLs] {
+            set fn [file tail $url]
+            util::unzip -overwrite -source $resourceDir/$version/$fn -destination $resourceDir/$version
+        }
+
+        #
+        # Move the language pack where the editor expects it to be.
+        #
+        set langs_path [::richtext::tinymce::langs_path]
+        #
+        # The download zip contains a langs folder, which contains a
+        # readme file, hence the -force.
+        #
+        file delete -force -- $langs_path
+        file rename $resourceDir/$version/langs $langs_path
+    }
 
     ad_proc initialize_widget {
         -form_id
@@ -33,168 +207,120 @@ namespace eval ::richtext::tinymce {
         #
 
         #
-        # Use the following default config
+        # This is the bare minimum config we need: specify a license
+        # and turn of the ad link.
         #
         set tinymce_default_config {
-            {mode "exact" }
-            {relative_urls "false"}
-            {height "450px" }
-            {width "100%"}
-            {plugins "style,layer,table,save,iespell,preview,media,searchreplace,print,contextmenu,paste,fullscreen,noneditable,visualchars,xhtmlxtras" }
-            {browsers "msie,gecko,safari,opera" }
-            {apply_source_formatting "true" }
-            {paste_auto_cleanup_on_paste true}
-            {paste_convert_headers_to_strong true}
-            {fix_list_elements true}
-            {fix_table_elements true}
-            {theme "openacs"}
-            {theme_openacs_toolbar_location "top" }
-            {theme_openacs_toolbar_align "left" }
-            {theme_openacs_statusbar_location "bottom" }
-            {theme_openacs_resizing true}
-            {theme_openacs_disable "styleselect"}
-            {theme_openacs_buttons1_add_before "save,separator"}
-            {theme_openacs_buttons2_add "separator,preview,separator,forecolor,backcolor"}
-            {theme_openacs_buttons2_add_before "cut,copy,paste,pastetext,pasteword,separator,search,replace,separator"}
-            {theme_openacs_buttons3_add_before "tablecontrols,separator"}
-            {theme_openacs_buttons3_add "iespell,media,separator,print,separator,fullscreen"}
-            {extended_valid_elements "img[id|class|style|title|lang|onmouseover|onmouseout|src|alt|name|width|height],hr[id|class|style|title],span[id|class|style|title|lang]"}
-            {element_format "html"}
+            license_key gpl
+            promotion false
         }
+        set tinymce_configs_list [::parameter::get_global_value \
+                                      -package_key richtext-tinymce \
+                                      -parameter DefaultConfig]
 
-        set config [parameter::get \
-                        -package_id [apm_package_id_from_key "richtext-tinymce"] \
-                        -parameter "TinyMCEDefaultConfig" \
-                        -default ""]
-
-        set configLegacy [parameter::get \
-                              -package_id [apm_package_id_from_key "acs-templating"] \
-                              -parameter "TinyMCEDefaultConfig" \
-                              -default ""]
-
-        set tinymce_configs_list $config
-        if {$configLegacy ne ""} {
-            if {$config eq ""} {
-                #
-                # We have no per-package config, but got a legacy
-                # config.
-                #
-                set tinymce_configs_list $configLegacy
-                ns_log warning "richtext-tinymce uses legacy parameters from acs-templating;\
-                    	TinyMCEDefaultConfig should be set in the package parameters of richtext-tinycme, not in acs-templating."
-            } else {
-                #
-                # Config for this package and legacy config in
-                # acs-templating is set, ignore config from
-                # acs-templating.
-                #
-                ns_log warning "richtext-tinymce ignores legacy parameters from acs-templating;
-                    	TinyMCEDefaultConfig should be set in the package parameters of richtext-xinha, not in acs-templating;\
-			when done, empty parameter setting for TinyMCEDefaultConfig in acs-templating."
-            }
-        }
-        if {$tinymce_configs_list eq ""} {
-            set tinymce_configs_list $tinymce_default_config
-        }
-
+        #
+        # Apply widget options to the configuration. They will
+        # override the parameter values.
+        #
+        set options [dict merge $tinymce_configs_list $options]
         ns_log debug "tinymce: options $options"
 
-        set pairslist [list]
-        foreach config_pair $tinymce_configs_list {
-            set config_key [lindex $config_pair 0]
-            if {[dict exists $options $config_key]} {
-                # override default values with individual
-                # widget specification
-                set config_value [dict get $options $config_key]
-                dict unset options $config_key
+        #
+        # Serialize to JSON
+        #
+
+        set pairlist [list]
+
+        #
+        # Note: we may need to use a more competent JSON serialization
+        # to account for e.g. arrays and such, but so far this is
+        # enough.
+        #
+        foreach {key value} $options {
+            if  {[string is boolean -strict $value] || [string is double -strict $value]} {
+                lappend pairslist "${key}:${value}"
             } else {
-                set config_value [lindex $config_pair 1]
-            }
-            ns_log debug "tinymce: key $config_key value $config_value"
-            if  {$config_value eq "true" || $config_value eq "false"} {
-                lappend pairslist "${config_key}:${config_value}"
-            } else {
-                lappend pairslist "${config_key}:\"${config_value}\""
+                lappend pairslist "${key}:\"${value}\""
             }
         }
 
-        foreach name [dict keys $options] {
-            ns_log debug "tinymce: NAME $name"
-            # add any additional options not specified in the
-            # default config
-            lappend pairslist "${name}:\"[dict get $options $name]\""
+        #
+        # Build the selectors for the textareas where we apply tinyMCE
+        #
+        set tinymce_selectors [list]
+        foreach htmlarea_id [lsort -unique $::acs_blank_master__htmlareas] {
+            lappend tinymce_selectors "#$htmlarea_id"
         }
+        lappend pairslist "selector: '[join $tinymce_selectors ,]'"
 
-        lappend pairslist "elements : \"[join $::acs_blank_master__htmlareas ","]\""
+        set tinymce_configs_js [join $pairslist ,]
 
-        set tinymce_configs_js [join $pairslist ","]
         set ::acs_blank_master(tinymce.config) $tinymce_configs_js
 
-        #ns_log notice "final ::acs_blank_master(tinymce.config):\n$tinymce_configs_js"
+        ::richtext::tinymce::add_editor
 
-        return ""
+        return
     }
 
+    ad_proc ::richtext::tinymce::add_editor {
+        {-order 10}
+        -reset_config:boolean
+        {-config ""}
+    } {
+        Add the necessary JavaScript and other files to the current
+        page. The naming is modeled after "add_script", "add_css",
+        ... but is intended to care about everything necessary,
+        including the content security policies. Similar naming
+        conventions should be used for other editors as well.
+
+        This function can be as well used from other packages, such
+        e.g. from the xowiki form-fields, which provide a much higher
+        customization.
+
+        @param order an additional offset to the loading order for
+                     this resource, useful to control dependencies.
+                     @param config a custom configuration dict for
+                     this editor, which will be either merged or used
+                     in place of the configuration coming from
+                     parameters, depending pn the reset_config
+                     flag. The syntax is the same of the DefaultConfig
+                     parameter in this package.
+        @param reset_config when set, resets the editor configuration
+                            coming from parameters, so that is may be
+                            completely overridden.
+    } {
+        ::template::head::add_javascript \
+            -src [::richtext::tinymce::url] \
+            -order ${order}.1
+
+        set local_installation_p [file exists [::richtext::tinymce::path]]
+        if {!$local_installation_p} {
+            set cdn_host [::richtext::tinymce::cdn_host]
+            security::csp::require connect-src $cdn_host
+            security::csp::require script-src $cdn_host
+            security::csp::require style-src $cdn_host
+            security::csp::require img-src $cdn_host
+        }
+
+        if {!$reset_config_p} {
+            set config [dict merge \
+                            $::acs_blank_master(tinymce.config) \
+                            $config]
+        }
+
+        set language [ad_conn language]
+
+        template::add_script -script [subst -nocommands {
+            tinyMCE.init({language: "${language}", ${config}});
+        }] -section body
+    }
 
     ad_proc render_widgets {} {
+        Mandatory implementation of the richtext::* contract, which may
+        go away at some point.
 
-        Render the TinyMCE rich-text widgets. This function is created
-        at a time when all rich-text widgets of this page are already
-        initialized. The function is controlled via the global variables
-
-           ::acs_blank_master(tinymce)
-           ::acs_blank_master(tinymce.config)
-           ::acs_blank_master__htmlareas
-
+        @see richtext::tinymce::add_editor
     } {
-        #
-        # In case no editor instances are created, or we are on a
-        # mobile browser, which is not supported be the current
-        # version of tinymce, nothing has to be done (i.e. the plain
-        # text area will be shown).  Probably, newer versions of
-        # tinymce provide some mobile support.
-        #
-        if {![info exists ::acs_blank_master(tinymce)] || [ad_conn mobile_p]} {
-            return
-        }
-
-        # Antonio Pisano 2015-03-27: including big javascripts in head
-        # is discouraged by current best practices for web.  We should
-        # consider moving every inclusion like this in the body. As
-        # consequences are non-trivial, just warn for now.
-        #
-        template::head::add_javascript \
-            -src "/resources/richtext-tinymce/tinymce/jscripts/tiny_mce/tiny_mce_src.js" \
-            -order tinymce0
-
-        # get the textareas where we apply tinymce
-        set tinymce_elements [list]
-        foreach htmlarea_id [lsort -unique $::acs_blank_master__htmlareas] {
-            lappend tinymce_elements $htmlarea_id
-        }
-        set tinymce_config $::acs_blank_master(tinymce.config)
-
-        #
-        # Figure out the language to use: 1st is the user language, if
-        # not available then the system one, fallback to english which
-        # is provided by default
-        #
-        set tinymce_relpath "packages/richtext-tinymce/www/resources/tinymce/jscripts/tiny_mce"
-        set lang_list [list [lang::user::language] [lang::system::language]]
-        set tinymce_lang "en"
-        foreach elm $lang_list {
-            if { [file exists $::acs::rootdir/${tinymce_relpath}/langs/${elm}.js] } {
-                set tinymce_lang $elm
-                break
-            }
-        }
-        
-        #
-        # TODO : each element should have it's own init
-        #
-        template::add_script -script [subst {
-            tinyMCE.init(\{language: \"$tinymce_lang\", $tinymce_config\});
-        }] -section body
     }
 }
 
