@@ -188,7 +188,7 @@ namespace eval ::richtext::tinymce {
         file rename $resourceDir/$version/langs $langs_path
     }
 
-    ad_proc -private serialize_options {options} {
+    ad_proc serialize_options {options} {
         Converts an options dict into a JSON value suitable to
         configure TinyMCE.
     } {
@@ -204,7 +204,10 @@ namespace eval ::richtext::tinymce {
         # enough.
         #
         foreach {key value} $options {
-            if  {[string is boolean -strict $value] || [string is double -strict $value]} {
+            if  {[string is boolean -strict $value] ||
+                 [string is double -strict $value] ||
+                 [regexp {^\{.*\}$} $value]
+             } {
                 lappend pairslist "${key}:${value}"
             } else {
                 lappend pairslist "${key}:\"${value}\""
@@ -281,6 +284,7 @@ namespace eval ::richtext::tinymce {
         {-order 10}
         -reset_config:boolean
         {-config ""}
+        {-init:boolean true}
     } {
         Add the necessary JavaScript and other files to the current
         page. The naming is modeled after "add_script", "add_css",
@@ -317,6 +321,13 @@ namespace eval ::richtext::tinymce {
             security::csp::require script-src $cdn_host
             security::csp::require style-src $cdn_host
             security::csp::require img-src $cdn_host
+        }
+
+        if {!$init_p} {
+            #
+            # We just want the header stuff.
+            #
+            return
         }
 
         set default_config [expr {$reset_config_p ? "" : [::richtext::tinymce::default_config]}]
