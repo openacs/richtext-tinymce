@@ -314,6 +314,10 @@ namespace eval ::richtext::tinymce {
             -src [::richtext::tinymce::url] \
             -order ${order}.1
 
+        ::template::head::add_css \
+            -href /resources/richtext-tinymce/css/style.css \
+            -order ${order}.1
+
         set local_installation_p [file exists [::richtext::tinymce::path]]
         if {!$local_installation_p} {
             set cdn_host [::richtext::tinymce::cdn_host]
