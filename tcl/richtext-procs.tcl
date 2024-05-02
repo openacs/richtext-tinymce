@@ -226,6 +226,7 @@ namespace eval ::richtext::tinymce {
         #
         set tinymce_hardcoded_config {
             license_key gpl
+            branding false
             promotion false
         }
         set tinymce_default_config [::parameter::get_global_value \

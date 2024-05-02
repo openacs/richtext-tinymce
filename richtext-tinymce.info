@@ -9,13 +9,13 @@
     <implements-subsite-p>f</implements-subsite-p>
     <inherit-templates-p>f</inherit-templates-p>
 
-    <version name="2.0.0" url="http://openacs.org/repository/download/apm/richtext-tinymce-2.0.0.apm">
-        <owner url="mailto:neumann@wu-wien.ac.at">Gustaf Neumann</owner>
+    <version name="2.0.1" url="http://openacs.org/repository/download/apm/richtext-tinymce-2.0.1.apm">
+        <owner url="mailto:antonio@elettrotecnica.it">Antonio Pisano</owner>
         <summary>Richtext editor plugin for integrating TinyMCE in OpenACS</summary>
-        <release-date>2024-04-29</release-date>
+        <release-date>2024-05-02</release-date>
         <maturity>0</maturity>
 
-        <provides url="richtext-tinymce" version="2.0.0"/>
+        <provides url="richtext-tinymce" version="2.0.1"/>
         <requires url="acs-tcl" version="5.10.1b1"/>
         <requires url="acs-templating" version="5.10.1b1"/>
 
@@ -25,9 +25,7 @@
         <parameters>
             <parameter scope="global" datatype="string"  min_n_values="1"  max_n_values="1"  name="APIKey"  default="no-api-key" description="API key, required when the editor should be used from CDN. To generate one, refer to https://www.tiny.cloud/docs/tinymce/latest/cloud-quick-start/#add-your-api-key." section_name="Hosting"/>
             <parameter scope="global" datatype="text"  min_n_values="1"  max_n_values="1"  name="DefaultConfig"  default="relative_urls &#34;false&#34;
-plugins &#34;table,save,preview,media,searchreplace,fullscreen&#34;
-license_key gpl
-promotion false" description="This is a tcl dict of default tinymce config options. Refer to https://www.tiny.cloud/docs/tinymce/latest/ for all the available configuration parameters." section_name="Configuration"/>
+plugins &#34;table,save,preview,image,media,searchreplace,fullscreen,code&#34;" description="This is a tcl dict of default tinymce config options. Refer to https://www.tiny.cloud/docs/tinymce/latest/ for all the available configuration parameters." section_name="Configuration"/>
             <parameter scope="global" datatype="string"  min_n_values="1"  max_n_values="1"  name="Version"  default="7.0.1" description="TinyMCE version number." section_name="Hosting"/>
         </parameters>
 
