@@ -267,13 +267,9 @@ namespace eval ::richtext::tinymce {
         ns_log debug "tinymce: options $options"
 
         #
-        # Build the selectors for the textareas where we apply tinyMCE
+        # Build the selector for the textarea where we apply tinyMCE
         #
-        set tinymce_selectors [list]
-        foreach htmlarea_id [lsort -unique $::acs_blank_master__htmlareas] {
-            lappend tinymce_selectors "#$htmlarea_id"
-        }
-        lappend options selector [join $tinymce_selectors ,]
+        lappend options selector "#${text_id}"
 
         ::richtext::tinymce::add_editor \
             -reset_config -config $options
