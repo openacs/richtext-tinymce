@@ -57,7 +57,7 @@ namespace eval ::richtext::tinymce {
         if {[file exists [::richtext::tinymce::path]]} {
             set version [::richtext::tinymce::version]
             set base_url /resources/richtext-tinymce/${version}/tinymce/js/tinymce
-            return ${base_url}/tinymce.min.js"
+            return ${base_url}/tinymce.min.js
         } else {
             set version [::richtext::tinymce::version]
             set base_url [::richtext::tinymce::base_cdn_url]
