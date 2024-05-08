@@ -333,6 +333,12 @@ namespace eval ::richtext::tinymce {
 
         set default_config [expr {$reset_config_p ? "" : [::richtext::tinymce::default_config]}]
 
+        #
+        # Useful e.g. for plugins to know where to point to or adapt
+        # their behavior.
+        #
+        lappend config package_id [ad_conn package_id]
+
         set config [dict merge \
                         [list language [ad_conn language]] \
                         $default_config \
