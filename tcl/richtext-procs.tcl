@@ -7,8 +7,8 @@ ad_library {
        ::richtext-tinymce::initialize_widget
        ::richtext-tinymce::render_widgets
 
-    @author Gustaf Neumann
-    @creation-date 1 Jan 2016
+    @author Antonio Pisano
+    @creation-date May 2024
     @cvs-id $Id$
 }
 
