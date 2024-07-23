@@ -123,7 +123,9 @@ namespace eval ::richtext::tinymce {
                               [::richtext::tinymce::lang_download_url] \
                              ] \
             urnMap {} \
-            versionCheckURL https://www.tiny.cloud/tinymce/
+            versionCheckURL https://cdnjs.com/libraries/tinymce \
+            versionCheckAPI {cdn cdnjs library tinymce count 5} \
+            installedVersion $version
 
         return $result
     }
