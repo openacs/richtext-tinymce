@@ -192,21 +192,16 @@ namespace eval ::richtext::tinymce {
         Converts an options dict into a JSON value suitable to
         configure TinyMCE.
     } {
-        #
-        # Serialize to JSON
-        #
-
         set pairslist [list]
 
         #
         # Note: we may need to use a more competent JSON serialization
-        # to account for e.g. arrays and such, but so far this is
-        # enough.
+        # at some point, but so far this is enough.
         #
         foreach {key value} $options {
             if  {[string is boolean -strict $value] ||
                  [string is double -strict $value] ||
-                 [regexp {^\{.*\}$} $value]
+                 [regexp {^(\{.*\}|\[.*\])$} $value]
              } {
                 lappend pairslist "${key}:${value}"
             } else {
