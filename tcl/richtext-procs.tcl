@@ -123,9 +123,8 @@ namespace eval ::richtext::tinymce {
                               [::richtext::tinymce::lang_download_url] \
                              ] \
             urnMap {} \
-            versionCheckURL https://cdnjs.com/libraries/tinymce \
             versionCheckAPI {cdn cdnjs library tinymce count 5} \
-            vulnerabilityCheckURL https://snyk.io/advisor/npm-package/tinymce \
+            vulnerabilityCheck {service snyk library tinymce} \
             installedVersion $version
 
         return $result
