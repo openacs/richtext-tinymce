@@ -1,5 +1,17 @@
+ad_library {
+    Initialization for tinymce
+}
+
+::richtext::tinymce::register_urns
+
+#
+# GN: is this the right place?
+#
 template::util::richtext::register_editor tinymce
 
+#
+# GN: this code is quite invasive. Why is this needed?
+#
 if {[apm_package_installed_p xowiki]} {
     #
     # We become the preferred richtext editor for xowiki, if none was
@@ -15,6 +27,7 @@ if {[apm_package_installed_p xowiki]} {
             -value "tinymce"
     }
 }
+
 
 # Local variables:
 #    mode: tcl

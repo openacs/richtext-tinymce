@@ -14,97 +14,62 @@ ad_library {
 
 namespace eval ::richtext::tinymce {
 
-    ad_proc -private version {} {
-        return [::parameter::get_global_value \
-                    -package_key richtext-tinymce \
-                    -parameter Version]
-    }
-
-    ad_proc -private api_key {} {
-        return [::parameter::get_global_value \
-                    -package_key richtext-tinymce \
-                    -parameter APIKey]
-    }
-
-    ad_proc -private cdn_host {} {
-        return https://cdn.tiny.cloud
-    }
-
-    ad_proc -private base_cdn_url {} {
-        set cdn_host [::richtext::tinymce::cdn_host]
-        set api_key [::richtext::tinymce::api_key]
-        return ${cdn_host}/1/${api_key}/tinymce
-    }
-
-    ad_proc -private base_download_url {} {
-        return https://download.tiny.cloud/tinymce/community
-    }
-
-    ad_proc -private download_url {} {
-        set version [::richtext::tinymce::version]
-        set base_download_url [::richtext::tinymce::base_download_url]
-        return ${base_download_url}/tinymce_${version}.zip
-    }
-
-    ad_proc -private lang_download_url {} {
-        set version [::richtext::tinymce::version]
-        set major [lindex [split $version .] 0]
-        set base_download_url [::richtext::tinymce::base_download_url]
-        return ${base_download_url}/languagepacks/${major}/langs.zip
-    }
-
-    ad_proc -private url {} {
-        if {[file exists [::richtext::tinymce::path]]} {
-            set version [::richtext::tinymce::version]
-            set base_url /resources/richtext-tinymce/${version}/tinymce/js/tinymce
-            return ${base_url}/tinymce.min.js
-        } else {
-            set version [::richtext::tinymce::version]
-            set base_url [::richtext::tinymce::base_cdn_url]
-            return ${base_url}/${version}/tinymce.min.js
-        }
-    }
-
-    ad_proc -private base_path {} {
-        set root_dir [acs_package_root_dir richtext-tinymce]
-        set version [::richtext::tinymce::version]
-        return ${root_dir}/www/resources/${version}/tinymce/js/tinymce
-    }
-
-    ad_proc -private langs_path {} {
-        return [::richtext::tinymce::base_path]/langs
-    }
-
-    ad_proc -private path {} {
-        return [::richtext::tinymce::base_path]/tinymce.min.js
-    }
-
-    ad_proc -private resource_info {} {
+    ad_proc resource_info {
+        {-version ""}
+    } {
         @return a dict in "resource_info" format, compatible with
-                other api and templates on the system.
+                other API and templates on the system.
 
         @see util::resources::can_install_locally
         @see util::resources::is_installed_locally
         @see util::resources::download
-        @see util::resources::version_dir
+        @see util::resources::version_segment
     } {
-        set version [::richtext::tinymce::version]
+
+        #
+        # If no version is specified, use configured one
+        #
+        if {$version eq ""} {
+            set version [::parameter::get_global_value \
+                             -package_key richtext-tinymce \
+                             -parameter Version]
+        }
 
         #
         # Setup variables for access via CDN vs. local resources.
         #
-        set resourceDir [acs_package_root_dir richtext-tinymce/www/resources]
-        set resourceUrl /resources/richtext-tinymce
-        set cdn         [::richtext::tinymce::cdn_host]
+        #   "resourceDir"    is the absolute path in the filesystem
+        #   "versionSegment" is the version-specific element both in the
+        #                    URL and in the filesystem.
+        #
 
-        if {[file exists [::richtext::tinymce::path]]} {
-            set prefix  [::richtext::tinymce::base_path]
+        set resourceDir    [acs_package_root_dir richtext-tinymce/www/resources]
+        set versionSegment $version
+        set cdnHost        cdnjs.cloudflare.com
+        set cdn            //$cdnHost/
+
+        if {[file exists $resourceDir/$versionSegment]} {
+            #
+            # Local version is installed
+            #
+            set prefix /resources/richtext-tinymce/$versionSegment
             set cdnHost ""
+            set cspMap ""
         } else {
-            set base_url [::richtext::tinymce::base_cdn_url]
-            set prefix ${base_url}/${version}
-            set cdnHost [dict get [ns_parseurl $cdn] host]
+            #
+            # Use CDN
+            #
+            set prefix ${cdn}ajax/libs/tinymce/$versionSegment
+            set cspMap [subst {
+                urn:ad:js:tinymce {
+                    connect-src $cdnHost
+                    script-src $cdnHost
+                    style-src $cdnHost
+                    img-src $cdnHost
+                }}]
         }
+
+        set major [lindex [split $version .] 0]
 
         #
         # Return the dict with at least the required fields
@@ -118,19 +83,22 @@ namespace eval ::richtext::tinymce {
             cssFiles {} \
             jsFiles  {} \
             extraFiles {} \
-            downloadURLs [list \
-                              [::richtext::tinymce::download_url] \
-                              [::richtext::tinymce::lang_download_url] \
-                             ] \
+            downloadURLs [subst {
+                https://download.tiny.cloud/tinymce/community/tinymce_$version.zip
+                https://download.tiny.cloud/tinymce/community/languagepacks/$major/langs.zip
+            }] \
             urnMap {} \
+            cspMap $cspMap \
             versionCheckAPI {cdn cdnjs library tinymce count 5} \
             vulnerabilityCheck {service snyk library tinymce} \
-            installedVersion $version
+            configuredVersion $version
 
         return $result
     }
 
-    ad_proc -private download {} {
+    ad_proc -private download {
+        {-version ""}
+    } {
 
         Download the editor package for the configured version and put
         it into a directory structure similar to the CDN structure to
@@ -142,15 +110,12 @@ namespace eval ::richtext::tinymce {
         writable by the web server.
 
     } {
-        set version [::richtext::tinymce::version]
+        set resource_info  [resource_info -version $version]
+        set version        [dict get $resource_info configuredVersion]
+        set resourceDir    [dict get $resource_info resourceDir]
+        set versionSegment [::util::resources::version_segment -resource_info $resource_info]
 
-        set resource_info [::richtext::tinymce::resource_info]
-
-        ::util::resources::download \
-            -resource_info $resource_info \
-            -version_dir $version
-
-        set resourceDir [dict get $resource_info resourceDir]
+        ::util::resources::download -resource_info $resource_info
 
         #
         # Do we have unzip installed?
@@ -163,11 +128,12 @@ namespace eval ::richtext::tinymce {
         #
         # Do we have a writable output directory under resourceDir?
         #
-        if {![file isdirectory $resourceDir/$version]} {
-            file mkdir $resourceDir/$version
+        set path $resourceDir/$versionSegment
+        if {![file isdirectory $path]} {
+            file mkdir $path
         }
-        if {![file writable $resourceDir/$version]} {
-            error "directory $resourceDir/$version is not writable"
+        if {![file writable $path]} {
+            error "directory $path is not writable"
         }
 
         #
@@ -175,22 +141,22 @@ namespace eval ::richtext::tinymce {
         #
         foreach url [dict get $resource_info downloadURLs] {
             set fn [file tail $url]
-            util::unzip -overwrite -source $resourceDir/$version/$fn -destination $resourceDir/$version
+            util::unzip -overwrite -source $path/$fn -destination $path
         }
 
-        #
-        # Move the language pack where the editor expects it to be.
-        #
-        set langs_path [::richtext::tinymce::langs_path]
-        #
-        # The download zip contains a langs folder, which contains a
-        # readme file, hence the -force.
-        #
-        file delete -force -- $langs_path
-        file rename $resourceDir/$version/langs $langs_path
+        foreach f [glob \
+                       $path/tinymce/js/tinymce/*.* \
+                       $path/tinymce/js/tinymce/icons \
+                       $path/tinymce/js/tinymce/models \
+                       $path/tinymce/js/tinymce/plugins \
+                       $path/tinymce/js/tinymce/skins \
+                       $path/tinymce/js/tinymce/themes \
+                      ] {
+            file rename $f $path/[file tail $f]
+        }
     }
 
-    ad_proc serialize_options {options} {
+    ad_proc -private serialize_options {options} {
         Converts an options dict into a JSON value suitable to
         configure TinyMCE.
     } {
@@ -304,22 +270,13 @@ namespace eval ::richtext::tinymce {
                             coming from system parameters and only use
                             that we provide locally.
     } {
-        ::template::head::add_javascript \
-            -src [::richtext::tinymce::url] \
-            -order ${order}.1
-
         ::template::head::add_css \
-            -href /resources/richtext-tinymce/css/style.css \
+            -href urn:ad:css:tinymce \
             -order ${order}.1
 
-        set local_installation_p [file exists [::richtext::tinymce::path]]
-        if {!$local_installation_p} {
-            set cdn_host [::richtext::tinymce::cdn_host]
-            security::csp::require connect-src $cdn_host
-            security::csp::require script-src $cdn_host
-            security::csp::require style-src $cdn_host
-            security::csp::require img-src $cdn_host
-        }
+        ::template::head::add_javascript \
+            -src urn:ad:js:tinymce \
+            -order ${order}.1
 
         if {!$init_p} {
             #
@@ -355,6 +312,30 @@ namespace eval ::richtext::tinymce {
         @see richtext::tinymce::add_editor
     } {
     }
+
+
+    ad_proc -private ::richtext::tinymce::register_urns {} {
+        Register URNs either with local or with CDN URLs.
+    } {
+        set resource_info [resource_info]
+        set prefix [dict get $resource_info prefix]
+
+        #
+        # Settings for CDN and local installs are the same
+        #
+        dict set URNs urn:ad:js:tinymce $prefix/tinymce.min.js
+        dict set URNs urn:ad:css:tinymce $prefix/skins/ui/oxide/skin.min.css
+
+        foreach {URN resource} $URNs {
+            template::register_urn \
+                -urn $URN \
+                -resource $resource \
+                -csp_list [expr {[dict exists $resource_info cspMap $URN]
+                                 ? [dict get $resource_info cspMap $URN]
+                                 : ""}]
+        }
+    }
+
 }
 
 # Local variables:

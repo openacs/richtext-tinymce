@@ -1,10 +1,12 @@
 ad_page_contract {
+    @author Gustaf Neumann
 
-    Download TinyMCE
-
+    @creation-date Jan 04, 2017
+} {
+    {version:token,notnull ""}
 }
 
-::richtext::tinymce::download
+::richtext::tinymce::download -version $version
 ad_returnredirect .
 
 # Local variables:

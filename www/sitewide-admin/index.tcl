@@ -3,13 +3,11 @@ ad_page_contract {
 
     @creation-date Aug 6, 2018
 } {
-    {ck_package:token ""}
 }
 
-set version [::richtext::tinymce::version]
-
 set resource_info [::richtext::tinymce::resource_info]
-set download_url download
+set version [dict get $resource_info configuredVersion]
+set download_url [ad_conn url]/download?version=$version
 
 set title "[dict get $resource_info resourceName] - Sitewide Admin"
 set context [list $title]
