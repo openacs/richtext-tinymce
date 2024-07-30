@@ -13,6 +13,20 @@ ad_library {
 }
 
 namespace eval ::richtext::tinymce {
+    variable parameter_info
+
+    #
+    # The TinyMCE version configuration can be tailored via the OpenACS
+    # configuration file:
+    #
+    # ns_section ns/server/${server}/acs/fa-icons
+    #        ns_param Version 7.0.1
+    #
+    set parameter_info {
+        package_key richtext-tinymce
+        parameter_name Version
+        default_value 7.0.1
+    }
 
     ad_proc resource_info {
         {-version ""}
@@ -25,14 +39,18 @@ namespace eval ::richtext::tinymce {
         @see util::resources::download
         @see util::resources::version_segment
     } {
+        variable parameter_info
 
         #
         # If no version is specified, use configured one
         #
         if {$version eq ""} {
-            set version [::parameter::get_global_value \
-                             -package_key richtext-tinymce \
-                             -parameter Version]
+            dict with parameter_info {
+                set version [::parameter::get_global_value \
+                                 -package_key $package_key \
+                                 -parameter $parameter_name \
+                                 -default $default_value]
+            }
         }
 
         #
@@ -91,6 +109,7 @@ namespace eval ::richtext::tinymce {
             cspMap $cspMap \
             versionCheckAPI {cdn cdnjs library tinymce count 5} \
             vulnerabilityCheck {service snyk library tinymce} \
+            parameterInfo $parameter_info \
             configuredVersion $version
 
         return $result
