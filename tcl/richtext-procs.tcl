@@ -87,6 +87,9 @@ namespace eval ::richtext::tinymce {
                 }}]
         }
 
+        dict set URNs urn:ad:js:tinymce tinymce.min.js
+        dict set URNs urn:ad:css:tinymce skins/ui/oxide/skin.min.css
+
         set major [lindex [split $version .] 0]
 
         #
@@ -105,7 +108,7 @@ namespace eval ::richtext::tinymce {
                 https://download.tiny.cloud/tinymce/community/tinymce_$version.zip
                 https://download.tiny.cloud/tinymce/community/languagepacks/$major/langs.zip
             }] \
-            urnMap {} \
+            urnMap $URNs \
             cspMap $cspMap \
             versionCheckAPI {cdn cdnjs library tinymce count 5} \
             vulnerabilityCheck {service snyk library tinymce} \
@@ -330,29 +333,6 @@ namespace eval ::richtext::tinymce {
 
         @see richtext::tinymce::add_editor
     } {
-    }
-
-
-    ad_proc -private ::richtext::tinymce::register_urns {} {
-        Register URNs either with local or with CDN URLs.
-    } {
-        set resource_info [resource_info]
-        set prefix [dict get $resource_info prefix]
-
-        #
-        # Settings for CDN and local installs are the same
-        #
-        dict set URNs urn:ad:js:tinymce $prefix/tinymce.min.js
-        dict set URNs urn:ad:css:tinymce $prefix/skins/ui/oxide/skin.min.css
-
-        foreach {URN resource} $URNs {
-            template::register_urn \
-                -urn $URN \
-                -resource $resource \
-                -csp_list [expr {[dict exists $resource_info cspMap $URN]
-                                 ? [dict get $resource_info cspMap $URN]
-                                 : ""}]
-        }
     }
 
 }

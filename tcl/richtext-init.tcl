@@ -2,7 +2,8 @@ ad_library {
     Initialization for tinymce
 }
 
-::richtext::tinymce::register_urns
+
+::util::resources::register_urns -namespace richtext::tinymce
 
 template::util::richtext::register_editor tinymce
 
