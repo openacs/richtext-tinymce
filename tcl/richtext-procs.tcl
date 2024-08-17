@@ -78,13 +78,12 @@ namespace eval ::richtext::tinymce {
             # Use CDN
             #
             set prefix ${cdn}ajax/libs/tinymce/$versionSegment
-            set cspMap [subst {
-                urn:ad:js:tinymce {
-                    connect-src $cdnHost
-                    script-src $cdnHost
-                    style-src $cdnHost
-                    img-src $cdnHost
-                }}]
+            dict set cspMap urn:ad:js:tinymce [subst {
+                connect-src $cdnHost
+                script-src $cdnHost
+                style-src $cdnHost
+                img-src $cdnHost
+            }]
         }
 
         dict set URNs urn:ad:js:tinymce tinymce.min.js
