@@ -3,7 +3,7 @@ ad_library {
 }
 
 
-::util::resources::register_urns -namespace richtext::tinymce
+::util::resources::register_urns -prefix richtext::tinymce
 
 template::util::richtext::register_editor tinymce
 
