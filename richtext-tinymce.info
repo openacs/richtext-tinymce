@@ -8,43 +8,25 @@
     <singleton-p>t</singleton-p>
     <implements-subsite-p>f</implements-subsite-p>
     <inherit-templates-p>f</inherit-templates-p>
-    
-    <version name="0.5" url="http://openacs.org/repository/download/apm/richtext-tinymce-0.5.apm">
-        <owner url="mailto:neumann@wu-wien.ac.at">Gustaf Neumann</owner>
-        <summary>Richtext editor plugin for integrating TinyMCE with acs-templating</summary>
-        <maturity>0</maturity>
 
-        <provides url="richtext-tinymce" version="0.5"/>
-	<requires url="acs-templating" version="5.9.1"/>
-	<requires url="acs-tcl" version="5.9.1"/>
+    <version name="2.1.4" url="http://openacs.org/repository/download/apm/richtext-tinymce-2.1.4.apm">
+        <owner url="mailto:antonio@elettrotecnica.it">Antonio Pisano</owner>
+        <summary>Richtext editor plugin for integrating TinyMCE in OpenACS</summary>
+        <release-date>2024-09-02</release-date>
+        <maturity>2</maturity>
+
+        <provides url="richtext-tinymce" version="2.1.4"/>
+        <requires url="acs-tcl" version="5.10.1"/>
+        <requires url="acs-templating" version="5.10.1"/>
+        <requires url="attachments" version="0.14.0"/>
 
         <callbacks>
+            <callback type="after-upgrade"  proc="richtext::tinymce::apm::after_upgrade"/>
         </callbacks>
         <parameters>
-            <parameter scope="instance" datatype="text"  min_n_values="1"  max_n_values="1"  name="TinyMCEDefaultConfig"  default="{mode &quot;exact&quot;} 
-{relative_urls &quot;false&quot;}
-{height &quot;450px&quot;}
-{width &quot;100%&quot;}
-{plugins &quot;style,layer,table,save,iespell,preview,media,searchreplace,print,contextmenu,paste,fullscreen,noneditable,visualchars,xhtmlxtras&quot;}
-{browsers &quot;msie,gecko,safari,opera&quot;}
-{apply_source_formatting &quot;true&quot;}
-{paste_auto_cleanup_on_paste true}
-{paste_convert_headers_to_strong true}
-{fix_list_elements true}
-{fix_table_elements true}
-{theme &quot;openacs&quot;}
-{theme_openacs_toolbar_location &quot;top&quot;}
-{theme_openacs_toolbar_align &quot;left&quot;}
-{theme_openacs_statusbar_location &quot;bottom&quot;}
-{theme_openacs_resizing true}
-{theme_openacs_disable &quot;styleselect&quot;}
-{theme_openacs_buttons1_add_before &quot;save,separator&quot;} 
-{theme_openacs_buttons2_add &quot;separator,preview,separator,forecolor,backcolor&quot;} 
-{theme_openacs_buttons2_add_before &quot;cut,copy,paste,pastetext,pasteword,separator,search,replace,separator&quot;} 
-{theme_openacs_buttons3_add_before &quot;tablecontrols,separator&quot;} 
-{theme_openacs_buttons3_add &quot;iespell,media,separator,print,separator,fullscreen&quot;} 
-{extended_valid_elements &quot;img[id|class|style|title|lang|onmouseover|onmouseout|src|alt|name|width|height],hr[id|class|style|title],span[id|class|style|title|lang]&quot;}
-{element_format &quot;html&quot;}" description="This is a tcl list of default tinymce config options as found in http://wiki.moxiecode.com/index.php/TinyMCE:Configuration "/>
+            <parameter scope="global" datatype="string"  min_n_values="1"  max_n_values="1"  name="APIKey"  default="no-api-key" description="API key, required when the editor should be used from CDN. To generate one, refer to https://www.tiny.cloud/docs/tinymce/latest/cloud-quick-start/#add-your-api-key." section_name="Hosting"/>
+            <parameter scope="global" datatype="text"  min_n_values="1"  max_n_values="1"  name="DefaultConfig"  default="relative_urls &#34;false&#34;
+plugins &#34;table,save,preview,image,media,searchreplace,fullscreen,code&#34;" description="This is a tcl dict of default tinymce config options. Refer to https://www.tiny.cloud/docs/tinymce/latest/ for all the available configuration parameters." section_name="Configuration"/>
         </parameters>
 
     </version>
