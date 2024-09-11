@@ -299,6 +299,12 @@ namespace eval ::richtext::tinymce {
             -src urn:ad:js:tinymce \
             -order ${order}.1
 
+        #
+        # TinyMCE transparently copy-pastes images as blobs into the
+        # content.
+        #
+        security::csp::require img-src blob:
+
         if {!$init_p} {
             #
             # We just want the header stuff.
