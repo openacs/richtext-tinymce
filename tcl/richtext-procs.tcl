@@ -20,12 +20,12 @@ namespace eval ::richtext::tinymce {
     # configuration file:
     #
     # ns_section ns/server/${server}/acs/fa-icons
-    #        ns_param Version 7.4.1
+    #        ns_param Version 7.5.1
     #
     set parameter_info {
         package_key richtext-tinymce
         parameter_name Version
-        default_value 7.4.1
+        default_value 7.5.1
     }
 
     ad_proc resource_info {
