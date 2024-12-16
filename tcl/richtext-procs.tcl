@@ -25,7 +25,7 @@ namespace eval ::richtext::tinymce {
     set parameter_info {
         package_key richtext-tinymce
         parameter_name Version
-        default_value 7.5.1
+        default_value 7.6.0
     }
 
     ad_proc resource_info {
