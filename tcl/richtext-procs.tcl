@@ -25,7 +25,7 @@ namespace eval ::richtext::tinymce {
     set parameter_info {
         package_key richtext-tinymce
         parameter_name Version
-        default_value 7.6.1
+        default_value 7.9.1
     }
 
     ad_proc resource_info {
@@ -63,8 +63,9 @@ namespace eval ::richtext::tinymce {
 
         set resourceDir    [acs_package_root_dir richtext-tinymce/www/resources]
         set versionSegment $version
-        set cdnHost        cdnjs.cloudflare.com
-        set cdn            //$cdnHost/
+        #set cdnHost        cdnjs.cloudflare.com
+        set cdnHost        cdn.jsdelivr.net
+        set cdn            //$cdnHost/npm
 
         if {[file exists $resourceDir/$versionSegment]} {
             #
@@ -77,7 +78,8 @@ namespace eval ::richtext::tinymce {
             #
             # Use CDN
             #
-            set prefix ${cdn}ajax/libs/tinymce/$versionSegment
+            #set prefix ${cdn}ajax/libs/tinymce/$versionSegment
+            set prefix ${cdn}/tinymce@$versionSegment
             dict set cspMap urn:ad:js:tinymce [subst {
                 connect-src $cdnHost
                 script-src $cdnHost
@@ -109,7 +111,7 @@ namespace eval ::richtext::tinymce {
             }] \
             urnMap $URNs \
             cspMap $cspMap \
-            versionCheckAPI {cdn cdnjs library tinymce count 5} \
+            versionCheckAPI {cdn jsdelivr library tinymce count 5} \
             vulnerabilityCheck {service snyk library tinymce} \
             parameterInfo $parameter_info \
             configuredVersion $version
