@@ -20,12 +20,12 @@ namespace eval ::richtext::tinymce {
     # configuration file:
     #
     # ns_section ns/server/${server}/acs/fa-icons
-    #        ns_param Version7.6.1
+    #        ns_param Version 8.0.1
     #
     set parameter_info {
         package_key richtext-tinymce
         parameter_name Version
-        default_value 7.9.1
+        default_value 8.0.1
     }
 
     ad_proc resource_info {
@@ -94,6 +94,15 @@ namespace eval ::richtext::tinymce {
         set major [lindex [split $version .] 0]
 
         #
+        # tinyMCE 8 currently does not ship with an own language pack,
+        # but the one for 7 seems to work fine.
+        #
+        # Until a proper language pack is released, we will use the
+        # one for 7 for any later version.
+        #
+        set lang_version [expr {min(7, $major}]
+
+        #
         # Return the dict with at least the required fields
         #
         lappend result \
@@ -107,7 +116,7 @@ namespace eval ::richtext::tinymce {
             extraFiles {} \
             downloadURLs [subst {
                 https://download.tiny.cloud/tinymce/community/tinymce_$version.zip
-                https://download.tiny.cloud/tinymce/community/languagepacks/$major/langs.zip
+                https://download.tiny.cloud/tinymce/community/languagepacks/$lang_version/langs.zip
             }] \
             urnMap $URNs \
             cspMap $cspMap \
