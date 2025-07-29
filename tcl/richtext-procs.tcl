@@ -100,7 +100,7 @@ namespace eval ::richtext::tinymce {
         # Until a proper language pack is released, we will use the
         # one for 7 for any later version.
         #
-        set lang_version [expr {min(7, $major}]
+        set lang_version [expr {min(7, $major)}]
 
         #
         # Return the dict with at least the required fields
